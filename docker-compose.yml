@@ -1,0 +1,43 @@
+services:
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - diplom-network
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${DB_USER}:${DB_PASSWORD}@mongo:27017/
+    networks:
+      - diplom-network
+    depends_on:
+      - mongo
+
+  back:
+    image: node:18.18
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - ${PORT}:3000
+    environment:
+      MONGO_CONNECTION: mongodb://${DB_USER}:${DB_PASSWORD}@mongo:27017/${DB_NAME}?authSource=admin
+      SECRET_KEY: ${SECRET_KEY}
+      PORT: ${PORT}
+    command: npm run start:dev
+    networks:
+      - diplom-network
+    depends_on:
+      - mongo
+
+networks:
+  diplom-network:
